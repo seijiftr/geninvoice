@@ -1,0 +1,24 @@
+# Node (for Phase 2 backend)
+node_modules/
+npm-debug.log*
+package-lock.json
+
+# Environment variables (never commit secrets)
+.env
+.env.local
+.env.production
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor folders
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build output
+dist/
+build/

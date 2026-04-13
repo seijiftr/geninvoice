@@ -1,0 +1,1903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GenInvoice — Professional Invoice Generator</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    /* ─────────────────────────────────────────
+       DESIGN TOKENS
+    ───────────────────────────────────────── */
+    :root {
+      --ink:           #0f0f0f;
+      --ink-2:         #3a3a3a;
+      --ink-3:         #7a7a7a;
+      --ink-4:         #b0b0b0;
+      --surface:       #fafaf8;
+      --surface-2:     #f2f0ec;
+      --border:        rgba(15, 15, 15, 0.10);
+      --border-strong: rgba(15, 15, 15, 0.22);
+      --accent:        #B069DB;
+      --accent-light:  #f3e8fb;
+      --accent-text:   #6b28a0;
+      --danger-bg:     #fff0f0;
+      --danger-border: #ffb3b3;
+      --danger-text:   #cc4444;
+      --font-display:  'Cormorant Garamond', Georgia, serif;
+      --font-body:     'DM Sans', system-ui, sans-serif;
+      --radius:        3px;
+      --transition:    0.18s ease;
+    }
+
+    /* ─────────────────────────────────────────
+       RESET & BASE
+    ───────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-body);
+      font-size: 14px;
+      line-height: 1.6;
+      background: var(--surface);
+      color: var(--ink);
+    }
+
+    /* ─────────────────────────────────────────
+       TOPBAR
+    ───────────────────────────────────────── */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 60px;
+      padding: 0 40px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: var(--ink);
+      user-select: none;
+    }
+
+    .logo__dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      margin-bottom: 2px;
+      flex-shrink: 0;
+    }
+
+    /* ─────────────────────────────────────────
+       LANGUAGE DROPDOWN
+    ───────────────────────────────────────── */
+    .lang-wrap { position: relative; }
+
+    .lang-trigger {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 12px;
+      font-family: var(--font-body);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--ink-2);
+      background: var(--surface);
+      border: 1px solid var(--ink-2);
+      border-radius: var(--radius);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: border-color var(--transition), color var(--transition);
+    }
+
+    .lang-trigger:hover,
+    .lang-trigger.open { border-color: var(--accent); color: var(--accent); }
+
+    .lang-trigger__chevron {
+      font-size: 9px;
+      transition: transform 0.2s ease;
+    }
+
+    .lang-trigger.open .lang-trigger__chevron { transform: rotate(180deg); }
+
+    .lang-menu {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: calc(100% + 6px);
+      min-width: 165px;
+      background: #fff;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.10);
+      overflow: hidden;
+      z-index: 200;
+    }
+
+    .lang-menu.open { display: block; }
+
+    .lang-option {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 9px 14px;
+      font-size: 13px;
+      color: var(--ink-2);
+      cursor: pointer;
+      transition: background var(--transition), color var(--transition);
+    }
+
+    .lang-option:hover,
+    .lang-option.active { background: var(--accent-light); color: var(--accent-text); }
+    .lang-option.active  { font-weight: 500; }
+
+    .lang-option__flag { font-size: 16px; line-height: 1; }
+    .lang-option__name { flex: 1; }
+    .lang-option__code { font-size: 10px; color: var(--ink-4); }
+
+    /* ─────────────────────────────────────────
+       HERO
+    ───────────────────────────────────────── */
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 64px 40px 52px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 60% 40% at 50% 120%, rgba(176, 105, 219, 0.07) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero__eyebrow {
+      margin-bottom: 16px;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .hero__title {
+      margin-bottom: 16px;
+      font-family: var(--font-display);
+      font-size: 52px;
+      font-weight: 500;
+      line-height: 1.1;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+    }
+
+    .hero__title em { font-style: italic; color: var(--accent); }
+
+    .hero__sub {
+      max-width: 420px;
+      margin: 0 auto;
+      font-size: 15px;
+      font-weight: 300;
+      line-height: 1.7;
+      color: var(--ink-3);
+    }
+
+    /* ─────────────────────────────────────────
+       MAIN LAYOUT
+    ───────────────────────────────────────── */
+    .main {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* ─────────────────────────────────────────
+       FORM PANEL
+    ───────────────────────────────────────── */
+    .form-panel {
+      padding: 40px;
+      border-right: 1px solid var(--border);
+    }
+
+    .form-section { margin-bottom: 36px; }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section-header--row { justify-content: space-between; }
+
+    .section-header__title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 500;
+      color: var(--ink);
+    }
+
+    .section-header__num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--accent);
+      font-family: var(--font-body);
+      font-size: 11px;
+      font-weight: 500;
+      color: #fff;
+    }
+
+    .section-header__badge {
+      padding: 2px 8px;
+      margin-left: 2px;
+      font-family: var(--font-body);
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--ink-4);
+      border: 1px solid var(--border-strong);
+      border-radius: 10px;
+    }
+
+    /* ─────────────────────────────────────────
+       FORM FIELDS
+    ───────────────────────────────────────── */
+    .form-grid        { display: grid; grid-template-columns: 1fr 1fr;       gap: 14px; }
+    .form-grid--full  { display: grid; grid-template-columns: 1fr;           gap: 14px; }
+    .form-grid--three { display: grid; grid-template-columns: 1fr 1fr 1fr;   gap: 14px; }
+
+    .field         { display: flex; flex-direction: column; gap: 5px; }
+    .field--span2  { grid-column: span 2; }
+
+    label {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+    }
+
+    .label__optional {
+      font-size: 11px;
+      font-weight: 400;
+      letter-spacing: 0;
+      text-transform: none;
+      color: var(--ink-4);
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 9px 12px;
+      font-family: var(--font-body);
+      font-size: 13.5px;
+      color: var(--ink);
+      background: #fff;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(176, 105, 219, 0.12);
+    }
+
+    input::placeholder, textarea::placeholder { color: var(--ink-4); }
+
+    textarea {
+      resize: vertical;
+      min-height: 72px;
+    }
+
+    select {
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23aaa' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: 28px;
+    }
+
+    .currency-row { display: flex; gap: 10px; align-items: flex-end; }
+    .currency-row .field:first-child { width: 110px; flex-shrink: 0; }
+    .currency-row .field:last-child  { flex: 1; }
+
+    /* ─────────────────────────────────────────
+       LINE ITEMS
+    ───────────────────────────────────────── */
+    .items-header,
+    .item-row {
+      display: grid;
+      grid-template-columns: 1fr 80px 110px 110px 32px;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .items-header {
+      padding-bottom: 8px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .items-header span {
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-4);
+    }
+
+    .items-header span:nth-child(3),
+    .items-header span:nth-child(4) { text-align: right; }
+
+    .item-row {
+      margin-bottom: 8px;
+      animation: fadeIn 0.18s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-3px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .item-row__total {
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+      padding-right: 2px;
+      color: var(--ink-2);
+    }
+
+    /* ─────────────────────────────────────────
+       BUTTONS
+    ───────────────────────────────────────── */
+    .btn-remove {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      font-size: 16px;
+      line-height: 1;
+      color: var(--ink-3);
+      background: transparent;
+      border: 1px solid var(--border-strong);
+      border-radius: 50%;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .btn-remove:hover {
+      background: var(--danger-bg);
+      border-color: var(--danger-border);
+      color: var(--danger-text);
+    }
+
+    .btn-add {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      padding: 8px 16px;
+      font-family: var(--font-body);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--accent-text);
+      background: transparent;
+      border: 1px dashed var(--accent);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: background var(--transition);
+    }
+
+    .btn-add:hover { background: var(--accent-light); }
+
+    .btn-toggle {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 12px;
+      font-family: var(--font-body);
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--ink-2);
+      background: transparent;
+      border: 1px solid var(--ink-2);
+      border-radius: var(--radius);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: border-color var(--transition), color var(--transition);
+    }
+
+    .btn-toggle:hover { border-color: var(--accent); color: var(--accent); }
+
+    .btn-toggle__arrow {
+      font-size: 10px;
+      transition: transform 0.22s ease;
+    }
+
+    /* Notes toggle: arrow points down when open, right when closed */
+    #notesToggle       .btn-toggle__arrow { transform: rotate(0deg); }
+    #notesToggle.collapsed .btn-toggle__arrow { transform: rotate(-90deg); }
+
+    /* Logo toggle: arrow points right when closed (default), down when open */
+    #logoToggle        .btn-toggle__arrow { transform: rotate(-90deg); }
+    #logoToggle.open   .btn-toggle__arrow { transform: rotate(0deg); }
+
+    .btn-export-primary {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 13px;
+      font-family: var(--font-body);
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      color: #fff;
+      background: var(--ink);
+      border: 1px solid var(--ink);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: background var(--transition), border-color var(--transition);
+    }
+
+    .btn-export-primary:hover { background: var(--accent); border-color: var(--accent); }
+
+    .btn-export-secondary {
+      width: 100%;
+      margin-top: 8px;
+      padding: 10px;
+      font-family: var(--font-body);
+      font-size: 12px;
+      font-weight: 400;
+      letter-spacing: 0.02em;
+      color: var(--ink-2);
+      background: #fff;
+      border: 1px solid var(--ink-2);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: border-color var(--transition), color var(--transition);
+    }
+
+    .btn-export-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+    .btn-logo-remove {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      font-size: 14px;
+      color: var(--ink-3);
+      background: transparent;
+      border: 1px solid var(--border-strong);
+      border-radius: 50%;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .btn-logo-remove:hover {
+      background: var(--danger-bg);
+      border-color: var(--danger-border);
+      color: var(--danger-text);
+    }
+
+    /* ─────────────────────────────────────────
+       COLLAPSIBLE
+    ───────────────────────────────────────── */
+    .collapsible {
+      overflow: hidden;
+      max-height: 800px;
+      opacity: 1;
+      transition: max-height 0.3s ease, opacity 0.25s ease;
+    }
+
+    .collapsible.collapsed { max-height: 0; opacity: 0; }
+
+    /* ─────────────────────────────────────────
+       LOGO UPLOADER
+    ───────────────────────────────────────── */
+    .logo-upload-wrap {
+      grid-column: span 2;
+      margin-top: 4px;
+    }
+
+    .logo-toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 10px;
+      margin-bottom: 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo-toggle-row__label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+    }
+
+    #logoBody:not(.collapsed) { padding-top: 12px; }
+
+    .logo-dropzone {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 14px;
+      background: #fff;
+      border: 1px dashed var(--border-strong);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: border-color var(--transition), background var(--transition);
+    }
+
+    .logo-dropzone:hover,
+    .logo-dropzone.drag-over { border-color: var(--accent); background: var(--accent-light); }
+
+    .logo-dropzone input[type="file"] { display: none; }
+
+    .logo-dropzone__icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius);
+      background: var(--surface-2);
+      color: var(--ink-3);
+      transition: background var(--transition), color var(--transition);
+    }
+
+    .logo-dropzone:hover .logo-dropzone__icon,
+    .logo-dropzone.drag-over .logo-dropzone__icon { background: var(--accent-light); color: var(--accent); }
+
+    .logo-dropzone__text { flex: 1; min-width: 0; }
+
+    .logo-dropzone__prompt {
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--ink-2);
+      line-height: 1.4;
+    }
+
+    .logo-dropzone__hint {
+      margin-top: 2px;
+      font-size: 11px;
+      color: var(--ink-4);
+      line-height: 1.4;
+    }
+
+    .logo-dropzone__hint strong { color: var(--accent-text); font-weight: 500; }
+
+    .logo-preview-wrap {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      background: #fff;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+    }
+
+    .logo-preview-wrap.has-logo { display: flex; }
+
+    .logo-preview-wrap__thumb {
+      flex-shrink: 0;
+      max-height: 40px;
+      max-width: 120px;
+      object-fit: contain;
+      border-radius: 2px;
+    }
+
+    .logo-preview-wrap__info { flex: 1; min-width: 0; }
+
+    .logo-preview-wrap__name {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--ink-2);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .logo-preview-wrap__size { font-size: 11px; color: var(--ink-4); margin-top: 1px; }
+    .logo-preview-wrap__size.resized { color: var(--accent-text); }
+
+    .inv-logo {
+      max-height: 36px;
+      max-width: 140px;
+      object-fit: contain;
+      display: block;
+    }
+
+    /* ─────────────────────────────────────────
+       PREVIEW PANEL
+    ───────────────────────────────────────── */
+    .preview-panel {
+      position: sticky;
+      top: 60px;
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 60px);
+      padding: 32px 28px;
+      overflow-y: auto;
+      background: var(--surface-2);
+    }
+
+    .preview-panel__label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ink-4);
+    }
+
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--accent-text);
+    }
+
+    .live-badge__dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+    /* ─────────────────────────────────────────
+       INVOICE PREVIEW
+    ───────────────────────────────────────── */
+    .invoice-preview {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 28px;
+      font-size: 11px;
+      line-height: 1.5;
+      box-shadow: 0 2px 20px rgba(0, 0, 0, 0.06);
+      overflow: hidden;
+      word-break: break-word;
+      overflow-wrap: break-word;
+    }
+
+    .inv-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      padding-bottom: 14px;
+      margin-bottom: 16px;
+      border-bottom: 2px solid var(--ink);
+    }
+
+    .inv-header__left { flex: 1 1 0; min-width: 0; overflow: hidden; }
+    .inv-header__right { flex: 0 0 auto; text-align: right; }
+
+    .inv-company {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--ink);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .inv-tagline {
+      margin-top: 2px;
+      font-size: 9px;
+      color: var(--ink-3);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .inv-label {
+      font-family: var(--font-display);
+      font-size: 26px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      color: var(--ink);
+      white-space: nowrap;
+    }
+
+    .inv-number {
+      margin-top: 2px;
+      font-size: 9px;
+      color: var(--ink-3);
+      white-space: nowrap;
+    }
+
+    .inv-meta {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    .inv-meta__label {
+      margin-bottom: 3px;
+      font-size: 8px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-4);
+    }
+
+    .inv-meta__name {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--ink);
+      overflow-wrap: break-word;
+      word-break: break-word;
+    }
+
+    .inv-meta__value {
+      font-size: 10px;
+      color: var(--ink-2);
+      overflow-wrap: break-word;
+      word-break: break-word;
+    }
+
+    .inv-dates {
+      display: flex;
+      gap: 12px;
+      padding: 10px 12px;
+      margin-bottom: 14px;
+      background: var(--surface-2);
+      border-left: 3px solid var(--accent);
+      border-radius: 3px;
+    }
+
+    .inv-dates__item { flex: 1 1 0; min-width: 0; overflow: hidden; }
+    .inv-dates__item .inv-meta__value { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .inv-table {
+      width: 100%;
+      table-layout: fixed;
+      border-collapse: collapse;
+      margin-bottom: 12px;
+    }
+
+    .inv-table th {
+      padding: 6px 0;
+      font-size: 8px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-4);
+      text-align: left;
+      border-bottom: 1px solid var(--border-strong);
+      overflow: hidden;
+    }
+
+    .inv-table th:nth-child(1) { width: 42%; }
+    .inv-table th:nth-child(2) { width: 12%; text-align: right; }
+    .inv-table th:nth-child(3) { width: 23%; text-align: right; }
+    .inv-table th:nth-child(4) { width: 23%; text-align: right; }
+
+    .inv-table td {
+      padding: 7px 0;
+      font-size: 10px;
+      color: var(--ink-2);
+      vertical-align: top;
+      border-bottom: 1px solid var(--border);
+      overflow: hidden;
+      overflow-wrap: break-word;
+      word-break: break-word;
+    }
+
+    .inv-table td:not(:first-child) {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .inv-table__name { font-size: 10px; font-weight: 500; color: var(--ink); }
+
+    .inv-totals { display: flex; flex-direction: column; align-items: flex-end; }
+    .inv-totals__inner { width: 160px; max-width: 100%; }
+
+    .inv-total-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 3px 0;
+      font-size: 10px;
+      color: var(--ink-3);
+    }
+
+    .inv-total-row span:last-child { white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+    .inv-total-final {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 6px;
+      padding: 8px 10px;
+      font-size: 11px;
+      font-weight: 500;
+      color: #fff;
+      background: var(--accent);
+      border-radius: 2px;
+    }
+
+    .inv-total-final span:last-child { white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+    .inv-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 12px;
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .inv-footer__notes {
+      flex: 1 1 0;
+      min-width: 0;
+      font-size: 9px;
+      line-height: 1.5;
+      color: var(--ink-4);
+      overflow-wrap: break-word;
+      word-break: break-word;
+    }
+
+    .inv-footer__brand {
+      flex: 0 0 auto;
+      font-family: var(--font-display);
+      font-size: 14px;
+      color: var(--ink-4);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 50%;
+    }
+
+    /* ─────────────────────────────────────────
+       EXPORT BAR & NOTICE
+    ───────────────────────────────────────── */
+    .export-bar { margin-top: 22px; }
+
+    .export-notice {
+      margin-top: 14px;
+      padding: 10px 12px;
+      font-size: 11px;
+      line-height: 1.5;
+      color: var(--accent-text);
+      background: var(--accent-light);
+      border-left: 3px solid var(--accent);
+    }
+
+    /* ─────────────────────────────────────────
+       SCROLLBAR
+    ───────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(176, 105, 219, 0.25); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="logo">
+      <span class="logo__dot"></span>
+      <span data-t="brand">GenInvoice</span>
+    </div>
+
+    <div class="lang-wrap" id="langWrap">
+      <button class="lang-trigger" id="langTrigger" onclick="Lang.toggle()">
+        <span id="langFlag">🇺🇸</span>
+        <span id="langLabel">English</span>
+        <span class="lang-trigger__chevron">▼</span>
+      </button>
+      <div class="lang-menu" id="langMenu">
+        <div class="lang-option active" data-lang="en" onclick="Lang.set('en')">
+          <span class="lang-option__flag">🇺🇸</span>
+          <span class="lang-option__name">English</span>
+          <span class="lang-option__code">EN</span>
+        </div>
+        <div class="lang-option" data-lang="es" onclick="Lang.set('es')">
+          <span class="lang-option__flag">🇪🇸</span>
+          <span class="lang-option__name">Español</span>
+          <span class="lang-option__code">ES</span>
+        </div>
+        <div class="lang-option" data-lang="pt" onclick="Lang.set('pt')">
+          <span class="lang-option__flag">🇧🇷</span>
+          <span class="lang-option__name">Português</span>
+          <span class="lang-option__code">PT</span>
+        </div>
+        <div class="lang-option" data-lang="zh" onclick="Lang.set('zh')">
+          <span class="lang-option__flag">🇨🇳</span>
+          <span class="lang-option__name">中文</span>
+          <span class="lang-option__code">ZH</span>
+        </div>
+        <div class="lang-option" data-lang="ru" onclick="Lang.set('ru')">
+          <span class="lang-option__flag">🇷🇺</span>
+          <span class="lang-option__name">Русский</span>
+          <span class="lang-option__code">RU</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero">
+    <p class="hero__eyebrow" data-t="eyebrow">Professional Invoice Generator</p>
+    <h1 class="hero__title" data-t="heroTitle">Create <em>beautiful</em> invoices<br>in seconds.</h1>
+    <p class="hero__sub" data-t="heroSub">Fill in your details, preview in real time, and export a polished document ready to send anywhere in the world.</p>
+  </section>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- FORM PANEL -->
+    <div class="form-panel">
+
+      <!-- 1 · Your Information -->
+      <div class="form-section">
+        <div class="section-header">
+          <div class="section-header__title">
+            <span class="section-header__num">1</span>
+            <span data-t="secFrom">Your Information</span>
+          </div>
+        </div>
+        <div class="form-grid">
+
+          <div class="field field--span2">
+            <label data-t="lblCompany">Company / Name</label>
+            <input type="text" id="fromName" placeholder="Twokei Software" oninput="Preview.update()" />
+          </div>
+
+          <!-- Logo uploader — collapsed by default -->
+          <div class="logo-upload-wrap">
+            <div class="logo-toggle-row">
+              <div class="logo-toggle-row__label">
+                <span data-t="lblLogo">Logo</span>
+                <span class="section-header__badge" data-t="optTag">Optional</span>
+              </div>
+              <button class="btn-toggle" id="logoToggle" onclick="Logo.toggleSection()">
+                <span data-t="btnAddLogo">Add logo</span>
+                <span class="btn-toggle__arrow">▼</span>
+              </button>
+            </div>
+
+            <div class="collapsible collapsed" id="logoBody">
+              <div style="height: 12px;"></div>
+
+              <div class="logo-dropzone" id="logoDropzone"
+                   onclick="Logo.open()"
+                   ondragover="Logo.onDragOver(event)"
+                   ondragleave="Logo.onDragLeave(event)"
+                   ondrop="Logo.onDrop(event)">
+                <input type="file" id="logoInput" accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                       onchange="Logo.onFileSelect(event)" />
+                <div class="logo-dropzone__icon">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <rect x="1" y="3" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="1.3"/>
+                    <circle cx="5.5" cy="6.5" r="1.2" stroke="currentColor" stroke-width="1.2"/>
+                    <path d="M1 11l4-3 3 2.5 2.5-2 4.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <div class="logo-dropzone__text">
+                  <div class="logo-dropzone__prompt" data-t="logoPrompt">Click or drag your logo here</div>
+                  <div class="logo-dropzone__hint">
+                    PNG, JPG, SVG or WebP &nbsp;·&nbsp;
+                    <strong data-t="logoIdeal">Ideal: 400 × 120 px</strong>
+                    &nbsp;·&nbsp; Max 2 MB &nbsp;·&nbsp; Larger files are auto-resized
+                  </div>
+                </div>
+              </div>
+
+              <div class="logo-preview-wrap" id="logoPreviewWrap">
+                <img id="logoThumb" class="logo-preview-wrap__thumb" src="" alt="Logo preview" />
+                <div class="logo-preview-wrap__info">
+                  <div class="logo-preview-wrap__name" id="logoFileName">—</div>
+                  <div class="logo-preview-wrap__size" id="logoFileSize">—</div>
+                </div>
+                <button class="btn-logo-remove" onclick="Logo.remove()" aria-label="Remove logo">×</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label data-t="lblEmail">Email</label>
+            <input type="email" id="fromEmail" placeholder="contact@company.com" oninput="Preview.update()" />
+          </div>
+          <div class="field">
+            <label data-t="lblWebsite">Website</label>
+            <input type="text" id="fromWeb" placeholder="company.com" oninput="Preview.update()" />
+          </div>
+          <div class="field field--span2">
+            <label>
+              <span data-t="lblAddress">Address</span>
+              <span class="label__optional" data-t="optLabel">(optional)</span>
+            </label>
+            <input type="text" id="fromAddr" placeholder="123 Main St, New York, NY 10001" oninput="Preview.update()" />
+          </div>
+        </div>
+      </div>
+
+      <!-- 2 · Bill To -->
+      <div class="form-section">
+        <div class="section-header">
+          <div class="section-header__title">
+            <span class="section-header__num">2</span>
+            <span data-t="secBillTo">Bill To</span>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="field field--span2">
+            <label data-t="lblClient">Client / Company</label>
+            <input type="text" id="toName" placeholder="cDev" oninput="Preview.update()" />
+          </div>
+          <div class="field">
+            <label data-t="lblEmail">Email</label>
+            <input type="email" id="toEmail" placeholder="billing@client.com" oninput="Preview.update()" />
+          </div>
+          <div class="field">
+            <label data-t="lblCountry">Country</label>
+            <input type="text" id="toCountry" placeholder="United States" oninput="Preview.update()" />
+          </div>
+        </div>
+      </div>
+
+      <!-- 3 · Invoice Details -->
+      <div class="form-section">
+        <div class="section-header">
+          <div class="section-header__title">
+            <span class="section-header__num">3</span>
+            <span data-t="secDetails">Invoice Details</span>
+          </div>
+        </div>
+        <div class="form-grid form-grid--three">
+          <div class="field">
+            <label data-t="lblInvNum">Invoice No.</label>
+            <input type="text" id="invNum" placeholder="INV-2025-0001" oninput="Preview.update()" />
+          </div>
+          <div class="field">
+            <label data-t="lblIssue">Issue Date</label>
+            <input type="date" id="invDate" oninput="Preview.update()" />
+          </div>
+          <div class="field">
+            <label data-t="lblDue">Due Date</label>
+            <input type="date" id="dueDate" oninput="Preview.update()" />
+          </div>
+        </div>
+        <div class="currency-row" style="margin-top: 14px;">
+          <div class="field">
+            <label data-t="lblCurrency">Currency</label>
+            <select id="currency" onchange="Preview.update()">
+              <option value="$">USD $</option>
+              <option value="€">EUR €</option>
+              <option value="£">GBP £</option>
+              <option value="R$">BRL R$</option>
+              <option value="C$">CAD C$</option>
+            </select>
+          </div>
+          <div class="field">
+            <label data-t="lblTax">Tax Rate (%)</label>
+            <input type="number" id="taxRate" placeholder="0" min="0" max="100" value="0" oninput="Preview.update()" />
+          </div>
+        </div>
+      </div>
+
+      <!-- 4 · Line Items -->
+      <div class="form-section">
+        <div class="section-header">
+          <div class="section-header__title">
+            <span class="section-header__num">4</span>
+            <span data-t="secItems">Line Items</span>
+          </div>
+        </div>
+        <div class="items-header">
+          <span data-t="colDesc">Description</span>
+          <span data-t="colQty">Qty</span>
+          <span data-t="colPrice">Unit Price</span>
+          <span data-t="colTotal">Total</span>
+          <span></span>
+        </div>
+        <div id="itemsList"></div>
+        <button class="btn-add" onclick="Items.add()">
+          + <span data-t="addItem">Add line item</span>
+        </button>
+      </div>
+
+      <!-- 5 · Notes & Payment (collapsible, open by default) -->
+      <div class="form-section">
+        <div class="section-header section-header--row">
+          <div class="section-header__title">
+            <span class="section-header__num">5</span>
+            <span data-t="secNotes">Notes & Payment</span>
+            <span class="section-header__badge" data-t="optTag">Optional</span>
+          </div>
+          <button class="btn-toggle" id="notesToggle" onclick="Notes.toggle()">
+            <span data-t="btnHide">Hide</span>
+            <span class="btn-toggle__arrow">▼</span>
+          </button>
+        </div>
+        <div class="collapsible" id="notesBody">
+          <div class="form-grid form-grid--full">
+            <div class="field">
+              <label data-t="lblPayment">Payment Method</label>
+              <input type="text" id="payment" placeholder="PayPal: payments@company.com" oninput="Preview.update()" />
+            </div>
+            <div class="field">
+              <label data-t="lblNotes">Notes</label>
+              <textarea id="notes" placeholder="Payment is due within 30 days..." oninput="Preview.update()"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /form-panel -->
+
+    <!-- PREVIEW PANEL -->
+    <div class="preview-panel">
+      <div class="preview-panel__label">
+        <span data-t="previewLabel">Live Preview</span>
+        <span class="live-badge">
+          <span class="live-badge__dot"></span>
+          <span data-t="liveText">Live</span>
+        </span>
+      </div>
+
+      <div class="invoice-preview" id="invoicePreview"></div>
+
+      <div class="export-bar">
+        <button class="btn-export-primary" onclick="Export.docx()">
+          <svg width="14" height="14" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+            <path d="M7.5 1v9M3.5 6l4 4 4-4M2 12h11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span data-t="btnExport">Export as Word (.docx)</span>
+        </button>
+        <button class="btn-export-secondary" onclick="Export.pdf()">
+          <span data-t="btnPDF">Export as PDF</span>
+        </button>
+        <div class="export-notice" data-t="notice">
+          Phase 1 — preview is fully functional. Export connects in Phase 2.
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+
+  <script>
+    /* ─────────────────────────────────────
+       TRANSLATIONS
+    ───────────────────────────────────── */
+    const TRANSLATIONS = {
+      en: {
+        brand:'GenInvoice', eyebrow:'Professional Invoice Generator',
+        heroTitle:'Create <em>beautiful</em> invoices<br>in seconds.',
+        heroSub:'Fill in your details, preview in real time, and export a polished document ready to send anywhere in the world.',
+        secFrom:'Your Information', secBillTo:'Bill To', secDetails:'Invoice Details',
+        secItems:'Line Items', secNotes:'Notes & Payment',
+        lblCompany:'Company / Name', lblEmail:'Email', lblWebsite:'Website',
+        lblAddress:'Address', optLabel:'(optional)', lblLogo:'Logo',
+        logoPrompt:'Click or drag your logo here', logoIdeal:'Ideal: 400 × 120 px',
+        lblClient:'Client / Company', lblCountry:'Country',
+        lblInvNum:'Invoice No.', lblIssue:'Issue Date', lblDue:'Due Date',
+        lblCurrency:'Currency', lblTax:'Tax Rate (%)',
+        colDesc:'Description', colQty:'Qty', colPrice:'Unit Price', colTotal:'Total',
+        addItem:'Add line item', lblPayment:'Payment Method', lblNotes:'Notes',
+        previewLabel:'Live Preview', liveText:'Live',
+        btnExport:'Export as Word (.docx)', btnPDF:'Export as PDF',
+        notice:'Phase 1 — preview is fully functional. Export connects in Phase 2.',
+        optTag:'Optional', btnHide:'Hide', btnShow:'Show',
+        btnAddLogo:'Add logo', btnHideLogo:'Hide logo',
+        invLabel:'INVOICE', subtotal:'Subtotal', tax:'Tax', totalDue:'Total Due',
+        from:'From', billTo:'Bill To', issueDate:'Issue Date', dueDate:'Due Date',
+        status:'Status', unpaid:'Unpaid', paymentInfo:'Payment', notes:'Notes',
+        itemName:'Item', descPlaceholder:'Item description',
+        langFlag:'🇺🇸', langLabel:'English', locale:'en-US',
+      },
+      es: {
+        brand:'GenInvoice', eyebrow:'Generador Profesional de Facturas',
+        heroTitle:'Crea facturas <em>impecables</em><br>en segundos.',
+        heroSub:'Completa tus datos, previsualiza en tiempo real y exporta un documento listo para enviar a cualquier parte del mundo.',
+        secFrom:'Tu Información', secBillTo:'Facturar A', secDetails:'Detalles de Factura',
+        secItems:'Líneas de Factura', secNotes:'Notas y Pago',
+        lblCompany:'Empresa / Nombre', lblEmail:'Correo electrónico', lblWebsite:'Sitio web',
+        lblAddress:'Dirección', optLabel:'(opcional)', lblLogo:'Logotipo',
+        logoPrompt:'Haz clic o arrastra tu logo aquí', logoIdeal:'Ideal: 400 × 120 px',
+        lblClient:'Cliente / Empresa', lblCountry:'País',
+        lblInvNum:'N.º de Factura', lblIssue:'Fecha de Emisión', lblDue:'Vencimiento',
+        lblCurrency:'Moneda', lblTax:'Tasa de Impuesto (%)',
+        colDesc:'Descripción', colQty:'Cant.', colPrice:'Precio Unitario', colTotal:'Total',
+        addItem:'Agregar línea', lblPayment:'Método de Pago', lblNotes:'Notas',
+        previewLabel:'Vista Previa', liveText:'En vivo',
+        btnExport:'Exportar como Word (.docx)', btnPDF:'Exportar como PDF',
+        notice:'Fase 1 — la vista previa está activa. Exportación en Fase 2.',
+        optTag:'Opcional', btnHide:'Ocultar', btnShow:'Mostrar',
+        btnAddLogo:'Agregar logo', btnHideLogo:'Ocultar logo',
+        invLabel:'FACTURA', subtotal:'Subtotal', tax:'Impuesto', totalDue:'Total a Pagar',
+        from:'De', billTo:'Facturar A', issueDate:'Fecha de Emisión', dueDate:'Vencimiento',
+        status:'Estado', unpaid:'Pendiente', paymentInfo:'Pago', notes:'Notas',
+        itemName:'Artículo', descPlaceholder:'Descripción del artículo',
+        langFlag:'🇪🇸', langLabel:'Español', locale:'es-ES',
+      },
+      pt: {
+        brand:'GenInvoice', eyebrow:'Gerador Profissional de Faturas',
+        heroTitle:'Crie faturas <em>impecáveis</em><br>em segundos.',
+        heroSub:'Preencha seus dados, visualize em tempo real e exporte um documento pronto para enviar ao mundo todo.',
+        secFrom:'Suas Informações', secBillTo:'Faturar Para', secDetails:'Detalhes da Fatura',
+        secItems:'Itens da Fatura', secNotes:'Notas e Pagamento',
+        lblCompany:'Empresa / Nome', lblEmail:'E-mail', lblWebsite:'Site',
+        lblAddress:'Endereço', optLabel:'(opcional)', lblLogo:'Logotipo',
+        logoPrompt:'Clique ou arraste seu logotipo aqui', logoIdeal:'Ideal: 400 × 120 px',
+        lblClient:'Cliente / Empresa', lblCountry:'País',
+        lblInvNum:'N.º da Fatura', lblIssue:'Data de Emissão', lblDue:'Vencimento',
+        lblCurrency:'Moeda', lblTax:'Taxa de Imposto (%)',
+        colDesc:'Descrição', colQty:'Qtd.', colPrice:'Preço Unit.', colTotal:'Total',
+        addItem:'Adicionar item', lblPayment:'Forma de Pagamento', lblNotes:'Observações',
+        previewLabel:'Pré-visualização', liveText:'Ao Vivo',
+        btnExport:'Exportar como Word (.docx)', btnPDF:'Exportar como PDF',
+        notice:'Fase 1 — pré-visualização ativa. Exportação na Fase 2.',
+        optTag:'Opcional', btnHide:'Ocultar', btnShow:'Mostrar',
+        btnAddLogo:'Adicionar logo', btnHideLogo:'Ocultar logo',
+        invLabel:'INVOICE', subtotal:'Subtotal', tax:'Imposto', totalDue:'Total a Pagar',
+        from:'De', billTo:'Faturar Para', issueDate:'Data de Emissão', dueDate:'Vencimento',
+        status:'Status', unpaid:'Pendente', paymentInfo:'Pagamento', notes:'Observações',
+        itemName:'Item', descPlaceholder:'Descrição do item',
+        langFlag:'🇧🇷', langLabel:'Português', locale:'pt-BR',
+      },
+      zh: {
+        brand:'GenInvoice', eyebrow:'专业发票生成器',
+        heroTitle:'几秒钟内创建<em>精美</em>发票。',
+        heroSub:'填写您的信息，实时预览，并导出一份可发送到世界各地的精美文件。',
+        secFrom:'您的信息', secBillTo:'账单收件人', secDetails:'发票详情',
+        secItems:'明细项目', secNotes:'备注与付款',
+        lblCompany:'公司 / 姓名', lblEmail:'电子邮箱', lblWebsite:'网站',
+        lblAddress:'地址', optLabel:'（可选）', lblLogo:'徽标',
+        logoPrompt:'点击或拖拽您的徽标到此处', logoIdeal:'建议尺寸：400 × 120 像素',
+        lblClient:'客户 / 公司', lblCountry:'国家',
+        lblInvNum:'发票编号', lblIssue:'开具日期', lblDue:'到期日期',
+        lblCurrency:'货币', lblTax:'税率 (%)',
+        colDesc:'描述', colQty:'数量', colPrice:'单价', colTotal:'合计',
+        addItem:'添加项目', lblPayment:'付款方式', lblNotes:'备注',
+        previewLabel:'实时预览', liveText:'实时',
+        btnExport:'导出为 Word (.docx)', btnPDF:'导出为 PDF',
+        notice:'第一阶段 — 预览功能完整可用。导出功能将在第二阶段接入。',
+        optTag:'可选', btnHide:'隐藏', btnShow:'显示',
+        btnAddLogo:'添加徽标', btnHideLogo:'隐藏徽标',
+        invLabel:'INVOICE', subtotal:'小计', tax:'税额', totalDue:'应付总额',
+        from:'发件方', billTo:'账单收件人', issueDate:'开具日期', dueDate:'到期日期',
+        status:'状态', unpaid:'未付款', paymentInfo:'付款信息', notes:'备注',
+        itemName:'项目', descPlaceholder:'项目描述',
+        langFlag:'🇨🇳', langLabel:'中文', locale:'zh-CN',
+      },
+      ru: {
+        brand:'GenInvoice', eyebrow:'Профессиональный генератор счетов',
+        heroTitle:'Создавайте <em>красивые</em> счета<br>за секунды.',
+        heroSub:'Заполните данные, просматривайте в реальном времени и экспортируйте готовый документ для отправки в любую точку мира.',
+        secFrom:'Ваши данные', secBillTo:'Получатель счёта', secDetails:'Реквизиты счёта',
+        secItems:'Позиции', secNotes:'Примечания и оплата',
+        lblCompany:'Компания / Имя', lblEmail:'Электронная почта', lblWebsite:'Веб-сайт',
+        lblAddress:'Адрес', optLabel:'(необязательно)', lblLogo:'Логотип',
+        logoPrompt:'Нажмите или перетащите логотип сюда', logoIdeal:'Рекомендуется: 400 × 120 пкс',
+        lblClient:'Клиент / Компания', lblCountry:'Страна',
+        lblInvNum:'Номер счёта', lblIssue:'Дата выставления', lblDue:'Срок оплаты',
+        lblCurrency:'Валюта', lblTax:'Налоговая ставка (%)',
+        colDesc:'Описание', colQty:'Кол-во', colPrice:'Цена за ед.', colTotal:'Сумма',
+        addItem:'Добавить позицию', lblPayment:'Способ оплаты', lblNotes:'Примечания',
+        previewLabel:'Предпросмотр', liveText:'Живой',
+        btnExport:'Экспорт в Word (.docx)', btnPDF:'Экспорт в PDF',
+        notice:'Этап 1 — предпросмотр полностью работает. Экспорт подключится на этапе 2.',
+        optTag:'Необязательно', btnHide:'Скрыть', btnShow:'Показать',
+        btnAddLogo:'Добавить логотип', btnHideLogo:'Скрыть логотип',
+        invLabel:'INVOICE', subtotal:'Подытог', tax:'Налог', totalDue:'Итого к оплате',
+        from:'От', billTo:'Получатель', issueDate:'Дата выставления', dueDate:'Срок оплаты',
+        status:'Статус', unpaid:'Не оплачен', paymentInfo:'Оплата', notes:'Примечания',
+        itemName:'Позиция', descPlaceholder:'Описание позиции',
+        langFlag:'🇷🇺', langLabel:'Русский', locale:'ru-RU',
+      },
+    };
+
+    /* ─────────────────────────────────────
+       STATE
+    ───────────────────────────────────── */
+    const State = {
+      lang:        'en',
+      notesOpen:   true,
+      logoOpen:    false,
+      logoDataUrl: null,
+      items:       [],
+      nextId:      1,
+    };
+
+    /* ─────────────────────────────────────
+       HELPERS
+    ───────────────────────────────────── */
+
+    /** Translate a key for the current language, fall back to EN */
+    function t(key) {
+      return TRANSLATIONS[State.lang]?.[key] ?? TRANSLATIONS.en[key] ?? key;
+    }
+
+    /** Read a DOM input value safely, with optional fallback */
+    function val(id, fallback = '') {
+      const el = document.getElementById(id);
+      return (el && el.value.trim() !== '') ? el.value : fallback;
+    }
+
+    /** Escape text before inserting into innerHTML to prevent XSS / broken markup */
+    function esc(str) {
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    /** Format a number as currency using the current symbol */
+    function formatCurrency(n, symbol) {
+      return symbol + Number(n).toFixed(2);
+    }
+
+    /** Format a YYYY-MM-DD date string using the current locale */
+    function formatDate(raw) {
+      if (!raw) return '—';
+      return new Date(raw + 'T00:00:00').toLocaleDateString(t('locale'), {
+        month: 'short', day: 'numeric', year: 'numeric',
+      });
+    }
+
+    /* ─────────────────────────────────────
+       LANGUAGE MODULE
+    ───────────────────────────────────── */
+    const Lang = {
+      toggle() {
+        const open = document.getElementById('langMenu').classList.toggle('open');
+        document.getElementById('langTrigger').classList.toggle('open', open);
+      },
+
+      close() {
+        document.getElementById('langMenu').classList.remove('open');
+        document.getElementById('langTrigger').classList.remove('open');
+      },
+
+      set(code) {
+        State.lang = code;
+        this.close();
+
+        // Update <html lang> attribute for accessibility and semantics
+        document.documentElement.lang = code;
+
+        // Update trigger display
+        document.getElementById('langFlag').textContent  = t('langFlag');
+        document.getElementById('langLabel').textContent = t('langLabel');
+
+        // Update active indicator using data-lang attribute (no index dependency)
+        document.querySelectorAll('.lang-option').forEach(el => {
+          el.classList.toggle('active', el.dataset.lang === code);
+        });
+
+        // Re-translate all static elements
+        document.querySelectorAll('[data-t]').forEach(el => {
+          const key = el.getAttribute('data-t');
+          if (key === 'heroTitle') { el.innerHTML = t(key); return; }
+          el.textContent = t(key);
+        });
+
+        // Update placeholders on dynamic item rows
+        document.querySelectorAll('#itemsList .item-desc').forEach(el => {
+          el.placeholder = t('descPlaceholder');
+        });
+
+        Preview.update();
+      },
+    };
+
+    // Close lang menu when clicking outside
+    document.addEventListener('click', e => {
+      if (!e.target.closest('#langWrap')) Lang.close();
+    });
+
+    /* ─────────────────────────────────────
+       NOTES MODULE
+    ───────────────────────────────────── */
+    const Notes = {
+      toggle() {
+        State.notesOpen = !State.notesOpen;
+        const btn  = document.getElementById('notesToggle');
+        const body = document.getElementById('notesBody');
+        const span = btn.querySelector('span[data-t]');
+
+        body.classList.toggle('collapsed', !State.notesOpen);
+        btn.classList.toggle('collapsed',  !State.notesOpen);
+
+        if (span) {
+          const key = State.notesOpen ? 'btnHide' : 'btnShow';
+          span.textContent = t(key);
+          span.setAttribute('data-t', key);
+        }
+
+        Preview.update();
+      },
+    };
+
+    /* ─────────────────────────────────────
+       ITEMS MODULE
+    ───────────────────────────────────── */
+    const Items = {
+      add() {
+        State.items.push({ id: State.nextId++, desc: '', qty: 1, price: 0 });
+        this.render();
+        Preview.update();
+      },
+
+      remove(id) {
+        State.items = State.items.filter(item => item.id !== id);
+        this.render();
+        Preview.update();
+      },
+
+      /** Update a field on an item without re-rendering the whole list */
+      update(id, field, value) {
+        const item = State.items.find(i => i.id === id);
+        if (item) {
+          item[field] = field === 'desc' ? value : Number(value);
+          Preview.update();
+        }
+      },
+
+      render() {
+        const list = document.getElementById('itemsList');
+
+        // Remember which input is focused so we can restore focus after re-render
+        const focusedId   = document.activeElement?.dataset?.itemId;
+        const focusedField = document.activeElement?.dataset?.field;
+
+        list.innerHTML = '';
+
+        State.items.forEach(item => {
+          const row = document.createElement('div');
+          row.className = 'item-row';
+          row.innerHTML = `
+            <input
+              class="item-desc"
+              type="text"
+              placeholder="${t('descPlaceholder')}"
+              value="${esc(item.desc)}"
+              data-item-id="${item.id}"
+              data-field="desc"
+              oninput="Items.update(${item.id}, 'desc', this.value)"
+            />
+            <input
+              type="number" min="0"
+              value="${item.qty}"
+              style="text-align: center"
+              data-item-id="${item.id}"
+              data-field="qty"
+              oninput="Items.update(${item.id}, 'qty', this.value)"
+            />
+            <input
+              type="number" min="0" step="0.01"
+              value="${item.price}"
+              style="text-align: right"
+              data-item-id="${item.id}"
+              data-field="price"
+              oninput="Items.update(${item.id}, 'price', this.value)"
+            />
+            <div class="item-row__total" id="itotal_${item.id}">—</div>
+            <button class="btn-remove" onclick="Items.remove(${item.id})" aria-label="${t('colDesc')}">×</button>
+          `;
+          list.appendChild(row);
+        });
+
+        // Restore focus if the re-render was triggered from within the list
+        if (focusedId && focusedField) {
+          const restored = list.querySelector(`[data-item-id="${focusedId}"][data-field="${focusedField}"]`);
+          if (restored) {
+            restored.focus();
+            // Move cursor to end of text input
+            if (restored.type === 'text') {
+              const len = restored.value.length;
+              restored.setSelectionRange(len, len);
+            }
+          }
+        }
+      },
+    };
+
+    /* ─────────────────────────────────────
+       LOGO MODULE
+    ───────────────────────────────────── */
+    const LOGO_MAX_W     = 400;
+    const LOGO_MAX_H     = 120;
+    const LOGO_MAX_BYTES = 2 * 1024 * 1024; // 2 MB
+
+    const Logo = {
+
+      toggleSection() {
+        State.logoOpen = !State.logoOpen;
+        const btn  = document.getElementById('logoToggle');
+        const body = document.getElementById('logoBody');
+        const span = btn.querySelector('span[data-t]');
+
+        body.classList.toggle('collapsed', !State.logoOpen);
+        btn.classList.toggle('open', State.logoOpen);
+
+        if (span) {
+          const key = State.logoOpen ? 'btnHideLogo' : 'btnAddLogo';
+          span.textContent = t(key);
+          span.setAttribute('data-t', key);
+        }
+
+        Preview.update();
+      },
+
+      open() {
+        document.getElementById('logoInput').click();
+      },
+
+      onFileSelect(event) {
+        const file = event.target.files[0];
+        if (file) this._process(file);
+        event.target.value = ''; // reset so same file can be re-selected
+      },
+
+      onDragOver(event) {
+        event.preventDefault();
+        document.getElementById('logoDropzone').classList.add('drag-over');
+      },
+
+      onDragLeave() {
+        document.getElementById('logoDropzone').classList.remove('drag-over');
+      },
+
+      onDrop(event) {
+        event.preventDefault();
+        document.getElementById('logoDropzone').classList.remove('drag-over');
+        const file = event.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) this._process(file);
+      },
+
+      remove() {
+        State.logoDataUrl = null;
+        document.getElementById('logoPreviewWrap').classList.remove('has-logo');
+        document.getElementById('logoDropzone').style.display = '';
+        document.getElementById('logoThumb').src = '';
+        Preview.update();
+      },
+
+      _process(file) {
+        if (file.size > LOGO_MAX_BYTES) {
+          alert('File is too large. Please use an image under 2 MB.');
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const dataUrl = e.target.result;
+
+          // SVGs scale natively — no canvas needed
+          if (file.type === 'image/svg+xml') {
+            this._apply(dataUrl, file.name, file.size, false);
+            return;
+          }
+
+          const img = new Image();
+          img.onload = () => {
+            const needsResize = img.width > LOGO_MAX_W || img.height > LOGO_MAX_H;
+
+            if (!needsResize) {
+              this._apply(dataUrl, file.name, file.size, false);
+              return;
+            }
+
+            const scale = Math.min(LOGO_MAX_W / img.width, LOGO_MAX_H / img.height);
+            const newW  = Math.round(img.width  * scale);
+            const newH  = Math.round(img.height * scale);
+
+            const canvas = document.createElement('canvas');
+            canvas.width  = newW;
+            canvas.height = newH;
+            canvas.getContext('2d').drawImage(img, 0, 0, newW, newH);
+
+            const resizedUrl  = canvas.toDataURL('image/png');
+            const approxBytes = Math.round(resizedUrl.length * 0.75);
+            this._apply(resizedUrl, file.name, approxBytes, true, newW, newH);
+          };
+          img.src = dataUrl;
+        };
+        reader.readAsDataURL(file);
+      },
+
+      _apply(dataUrl, fileName, byteSize, wasResized, newW, newH) {
+        State.logoDataUrl = dataUrl;
+
+        document.getElementById('logoDropzone').style.display   = 'none';
+        document.getElementById('logoPreviewWrap').classList.add('has-logo');
+        document.getElementById('logoThumb').src                = dataUrl;
+        document.getElementById('logoFileName').textContent     = fileName;
+
+        const sizeEl = document.getElementById('logoFileSize');
+        if (wasResized) {
+          sizeEl.textContent = `Auto-resized to ${newW} × ${newH} px`;
+          sizeEl.classList.add('resized');
+        } else {
+          sizeEl.textContent = `${(byteSize / 1024).toFixed(0)} KB`;
+          sizeEl.classList.remove('resized');
+        }
+
+        Preview.update();
+      },
+    };
+
+    /* ─────────────────────────────────────
+       PREVIEW MODULE
+    ───────────────────────────────────── */
+    const Preview = {
+      update() {
+        // ── Gather values once ──
+        const currencySymbol = val('currency', '$');
+        const taxRate        = Math.max(0, parseFloat(document.getElementById('taxRate')?.value) || 0);
+        const fromName       = val('fromName', 'Your Company');
+        const fromEmail      = val('fromEmail');
+        const fromWeb        = val('fromWeb');
+        const fromAddr       = val('fromAddr');
+        const toName         = val('toName', 'Client Name');
+        const toEmail        = val('toEmail');
+        const toCountry      = val('toCountry');
+        const invNum         = val('invNum', 'INV-0001');
+        const invDate        = val('invDate');
+        const dueDate        = val('dueDate');
+        const payment        = State.notesOpen ? val('payment') : '';
+        const notes          = State.notesOpen ? val('notes')   : '';
+
+        // ── Compute line totals and subtotal ──
+        let subtotal = 0;
+        State.items.forEach(item => {
+          const lineTotal = item.qty * item.price;
+          subtotal += lineTotal;
+          const el = document.getElementById('itotal_' + item.id);
+          if (el) el.textContent = formatCurrency(lineTotal, currencySymbol);
+        });
+
+        const taxAmount = subtotal * taxRate / 100;
+        const total     = subtotal + taxAmount;
+
+        // ── Build item rows ──
+        const fmt = n => formatCurrency(n, currencySymbol);
+
+        const itemRows = State.items.length
+          ? State.items.map(item => `
+              <tr>
+                <td><div class="inv-table__name">${esc(item.desc) || t('itemName')}</div></td>
+                <td>${item.qty}</td>
+                <td>${fmt(item.price)}</td>
+                <td>${fmt(item.qty * item.price)}</td>
+              </tr>`).join('')
+          : `<tr>
+               <td colspan="4" style="color:var(--ink-4);padding:10px 0;font-size:10px;">
+                 ${t('addItem')}…
+               </td>
+             </tr>`;
+
+        // ── Build header left (logo or company name) ──
+        const activeLogo = State.logoOpen ? State.logoDataUrl : null;
+        const headerLeft = activeLogo
+          ? `<img src="${activeLogo}" class="inv-logo" alt="Logo" />`
+          : `<div class="inv-company">${esc(fromName)}</div>`;
+
+        // ── Build footer ──
+        const hasFooter = payment || notes;
+        const footer = hasFooter
+          ? `<div class="inv-footer">
+               <div class="inv-footer__notes">
+                 ${payment ? `<div class="inv-meta__label" style="margin-bottom:2px">${t('paymentInfo')}</div><div>${esc(payment)}</div>` : ''}
+                 ${notes   ? `<div class="inv-meta__label" style="margin-top:7px;margin-bottom:2px">${t('notes')}</div><div>${esc(notes)}</div>` : ''}
+               </div>
+               <div class="inv-footer__brand">${esc(fromName)}</div>
+             </div>`
+          : `<div class="inv-footer" style="justify-content:flex-end">
+               <div class="inv-footer__brand">${esc(fromName)}</div>
+             </div>`;
+
+        // ── Render ──
+        document.getElementById('invoicePreview').innerHTML = `
+          <div class="inv-header">
+            <div class="inv-header__left">
+              ${headerLeft}
+              <div class="inv-tagline">${esc(fromWeb || fromEmail)}</div>
+            </div>
+            <div class="inv-header__right">
+              <div class="inv-label">${t('invLabel')}</div>
+              <div class="inv-number">${esc(invNum)}</div>
+            </div>
+          </div>
+
+          <div class="inv-meta">
+            <div>
+              <div class="inv-meta__label">${t('from')}</div>
+              <div class="inv-meta__name">${esc(fromName)}</div>
+              ${fromEmail ? `<div class="inv-meta__value">${esc(fromEmail)}</div>` : ''}
+              ${fromAddr  ? `<div class="inv-meta__value">${esc(fromAddr)}</div>`  : ''}
+            </div>
+            <div>
+              <div class="inv-meta__label">${t('billTo')}</div>
+              <div class="inv-meta__name">${esc(toName)}</div>
+              ${toEmail   ? `<div class="inv-meta__value">${esc(toEmail)}</div>`   : ''}
+              ${toCountry ? `<div class="inv-meta__value">${esc(toCountry)}</div>` : ''}
+            </div>
+          </div>
+
+          <div class="inv-dates">
+            <div class="inv-dates__item">
+              <div class="inv-meta__label">${t('issueDate')}</div>
+              <div class="inv-meta__value">${formatDate(invDate)}</div>
+            </div>
+            <div class="inv-dates__item">
+              <div class="inv-meta__label">${t('dueDate')}</div>
+              <div class="inv-meta__value">${formatDate(dueDate)}</div>
+            </div>
+            <div class="inv-dates__item">
+              <div class="inv-meta__label">${t('status')}</div>
+              <div class="inv-meta__value" style="font-weight:500;color:var(--accent)">${t('unpaid')}</div>
+            </div>
+          </div>
+
+          <table class="inv-table">
+            <thead>
+              <tr>
+                <th>${t('colDesc')}</th>
+                <th>${t('colQty')}</th>
+                <th>${t('colPrice')}</th>
+                <th>${t('colTotal')}</th>
+              </tr>
+            </thead>
+            <tbody>${itemRows}</tbody>
+          </table>
+
+          <div class="inv-totals">
+            <div class="inv-totals__inner">
+              <div class="inv-total-row">
+                <span>${t('subtotal')}</span>
+                <span>${fmt(subtotal)}</span>
+              </div>
+              <div class="inv-total-row">
+                <span>${t('tax')} (${taxRate}%)</span>
+                <span>${fmt(taxAmount)}</span>
+              </div>
+              <div class="inv-total-final">
+                <span>${t('totalDue')}</span>
+                <span>${fmt(total)}</span>
+              </div>
+            </div>
+          </div>
+
+          ${footer}
+        `;
+      },
+    };
+
+    /* ─────────────────────────────────────
+       EXPORT MODULE (Phase 2 stubs)
+    ───────────────────────────────────── */
+    const Export = {
+      /** Returns a plain-object snapshot of the current invoice data for the backend */
+      _snapshot() {
+        const currencySymbol = val('currency', '$');
+        const taxRate = Math.max(0, parseFloat(document.getElementById('taxRate')?.value) || 0);
+        return {
+          lang:     State.lang,
+          currency: currencySymbol,
+          taxRate,
+          from: {
+            name:    val('fromName'),
+            email:   val('fromEmail'),
+            website: val('fromWeb'),
+            address: val('fromAddr'),
+            logoDataUrl: State.logoOpen ? State.logoDataUrl : null,
+          },
+          to: {
+            name:    val('toName'),
+            email:   val('toEmail'),
+            country: val('toCountry'),
+          },
+          invoice: {
+            number:    val('invNum'),
+            issueDate: val('invDate'),
+            dueDate:   val('dueDate'),
+          },
+          items: State.items.map(({ desc, qty, price }) => ({ desc, qty, price })),
+          notes:   State.notesOpen ? val('notes')   : '',
+          payment: State.notesOpen ? val('payment') : '',
+        };
+      },
+
+      docx() {
+        // Phase 2: POST this._snapshot() to /export/docx
+        console.log('Export payload:', this._snapshot());
+        alert('Export to .docx — coming in Phase 2!');
+      },
+
+      pdf() {
+        // Phase 2: POST this._snapshot() to /export/pdf
+        console.log('Export payload:', this._snapshot());
+        alert('PDF export — coming in Phase 2!');
+      },
+    };
+
+    /* ─────────────────────────────────────
+       INIT
+    ───────────────────────────────────── */
+    window.addEventListener('load', () => {
+      const today = new Date();
+      const due   = new Date(today);
+      due.setDate(due.getDate() + 30);
+
+      document.getElementById('invDate').value   = today.toISOString().split('T')[0];
+      document.getElementById('dueDate').value   = due.toISOString().split('T')[0];
+      document.getElementById('invNum').value    = 'INV-2025-0042';
+      document.getElementById('fromName').value  = 'Twokei Software';
+      document.getElementById('fromEmail').value = 'contact@twokei.com';
+      document.getElementById('fromWeb').value   = 'twokei.com';
+      document.getElementById('toName').value    = 'cDev';
+      document.getElementById('toEmail').value   = 'billing@cdev.io';
+      document.getElementById('toCountry').value = 'United States';
+      document.getElementById('payment').value   = 'PayPal: payments@twokei.com';
+      document.getElementById('notes').value     = 'Payment is due within 30 days. Please reference the invoice number in your payment.';
+
+      State.items.push({ id: State.nextId++, desc: 'Bot Hosting — 1 month', qty: 1, price: 64 });
+      Items.render();
+      Preview.update();
+    });
+  </script>
+</body>
+</html>
